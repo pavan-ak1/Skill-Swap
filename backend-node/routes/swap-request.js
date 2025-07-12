@@ -118,6 +118,8 @@ router.get('/conversations', async (req, res) => {
     
     // Populate profile information for each request
     const Profile = require('../models/Profile');
+    const Message = require('../models/Message');
+    
     const requestsWithProfiles = await Promise.all(
       requests.map(async (request) => {
         const otherUserId = request.fromUser._id.toString() === userId 
@@ -125,6 +127,17 @@ router.get('/conversations', async (req, res) => {
           : request.fromUser._id;
         
         const profile = await Profile.findOne({ user: otherUserId });
+        
+        // Get last message and unread count
+        const lastMessage = await Message.findOne({ swapRequestId: request._id })
+          .sort({ createdAt: -1 })
+          .populate('sender', 'username');
+        
+        const unreadCount = await Message.countDocuments({
+          swapRequestId: request._id,
+          recipient: userId,
+          read: false
+        });
         
         return {
           ...request.toObject(),
@@ -134,7 +147,13 @@ router.get('/conversations', async (req, res) => {
               ? request.toUser.username 
               : request.fromUser.username,
             profile: profile ? { photo: profile.photo, name: profile.name } : null
-          }
+          },
+          lastMessage: lastMessage ? {
+            content: lastMessage.content,
+            sender: lastMessage.sender.username,
+            createdAt: lastMessage.createdAt
+          } : null,
+          unreadCount
         };
       })
     );

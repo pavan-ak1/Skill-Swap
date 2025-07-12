@@ -163,6 +163,23 @@ function Inbox({ loggedIn, userId }) {
     </div>
   );
 
+  // If a chat is open, show only the Chat component (not the list)
+  if (chatUser && selectedSwapRequest) {
+    return (
+      <div className="main-content" style={{ maxWidth: 600, margin: '40px auto', borderRadius: 24, background: '#23232a', padding: 0 }}>
+        <Chat
+          swapRequestId={selectedSwapRequest._id}
+          otherUser={chatUser}
+          onClose={() => {
+            setChatUser(null);
+            setSelectedSwapRequest(null);
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Otherwise, show the conversation list
   return (
     <>
       <style>

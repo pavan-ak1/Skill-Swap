@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import '../App.css';
 
 function Login({ setLoggedIn }) {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isMobile, setIsMobile] = useState(false);
@@ -45,7 +45,7 @@ function Login({ setLoggedIn }) {
       const res = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ email, password })
       });
       const data = await res.json();
       if (data.success) {

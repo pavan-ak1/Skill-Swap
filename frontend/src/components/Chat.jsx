@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 
-function Chat({ swapRequestId, otherUser, onClose }) {
+function Chat({ swapRequestId, otherUser, onClose, hideHeader }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [socket, setSocket] = useState(null);
   const [currentUserProfile, setCurrentUserProfile] = useState(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [isNearBottom, setIsNearBottom] = useState(true);
   const messagesEndRef = useRef(null);
   const currentUserId = JSON.parse(atob(localStorage.getItem('token').split('.')[1])).id;
 
@@ -29,6 +31,7 @@ function Chat({ swapRequestId, otherUser, onClose }) {
   };
 
   useEffect(() => {
+    console.log('Chat component mounted with swapRequestId:', swapRequestId);
     // Connect to socket
     const newSocket = io('http://localhost:5000', { transports: ['websocket'] });
     setSocket(newSocket);
@@ -38,7 +41,12 @@ function Chat({ swapRequestId, otherUser, onClose }) {
 
     // Listen for new messages
     newSocket.on('new-message', (message) => {
+      console.log('New message in chat:', message);
       setMessages(prev => [...prev, message]);
+      // Auto-scroll if user is near bottom
+      if (isNearBottom) {
+        setTimeout(() => scrollToBottom(), 100);
+      }
     });
 
     // Load current user's profile
@@ -55,19 +63,28 @@ function Chat({ swapRequestId, otherUser, onClose }) {
       .catch(() => {});
 
     // Load existing messages
+    console.log('Loading messages for swapRequestId:', swapRequestId);
     fetch(`http://localhost:5000/api/messages/conversation/${swapRequestId}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
-      .then(res => res.json())
+      .then(res => {
+        console.log('Messages response status:', res.status);
+        return res.json();
+      })
       .then(data => {
+        console.log('Messages data:', data);
         if (Array.isArray(data)) {
           setMessages(data);
         } else {
+          console.error('Invalid messages data:', data);
           setError(data.error || 'Failed to load messages');
         }
         setLoading(false);
+        // Scroll to bottom after loading
+        setTimeout(() => scrollToBottom(), 100);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('Failed to load messages:', error);
         setError('Failed to load messages');
         setLoading(false);
       });
@@ -76,6 +93,12 @@ function Chat({ swapRequestId, otherUser, onClose }) {
     fetch(`http://localhost:5000/api/messages/read/${swapRequestId}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(res => {
+      console.log('Mark as read response:', res.status);
+    })
+    .catch(error => {
+      console.error('Error marking messages as read:', error);
     });
 
     return () => {
@@ -84,14 +107,75 @@ function Chat({ swapRequestId, otherUser, onClose }) {
     };
   }, [swapRequestId]);
 
+  // Update scroll detection when messages change
   useEffect(() => {
-    // Scroll to bottom when new messages arrive
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      handleScroll();
+    }
   }, [messages]);
+
+  // Add keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ctrl/Cmd + Up to scroll to top
+      if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowUp') {
+        e.preventDefault();
+        scrollToTop();
+      }
+      // Ctrl/Cmd + Down to scroll to bottom
+      if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowDown') {
+        e.preventDefault();
+        scrollToBottom();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Handle scroll events
+  const handleScroll = () => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+      const scrollPosition = scrollTop + clientHeight;
+      const totalHeight = scrollHeight;
+      const threshold = 150; // pixels from bottom - increased for better detection
+      
+      const nearBottom = totalHeight - scrollPosition < threshold;
+      setIsNearBottom(nearBottom);
+      setShowScrollButton(!nearBottom && scrollHeight > clientHeight);
+    }
+  };
+
+  // Scroll to bottom function
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'end'
+      });
+    }
+  };
+
+  // Scroll to top function
+  const scrollToTop = () => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
+
+    console.log('Sending message:', {
+      swapRequestId,
+      recipientId: otherUser._id,
+      content: newMessage.trim()
+    });
 
     const token = localStorage.getItem('token');
     try {
@@ -108,14 +192,21 @@ function Chat({ swapRequestId, otherUser, onClose }) {
         })
       });
       
+      console.log('Send message response status:', res.status);
       const data = await res.json();
+      console.log('Send message response data:', data);
+      
       if (data && !data.error) {
         setMessages(prev => [...prev, data]);
         setNewMessage('');
+        // Auto-scroll after sending
+        setTimeout(() => scrollToBottom(), 100);
       } else {
+        console.error('Failed to send message:', data.error);
         setError(data.error || 'Failed to send message');
       }
-    } catch {
+    } catch (error) {
+      console.error('Error sending message:', error);
       setError('Failed to send message');
     }
   };

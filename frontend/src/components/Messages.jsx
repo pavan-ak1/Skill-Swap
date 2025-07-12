@@ -49,6 +49,7 @@ function Messages({ loggedIn, userId, onClose }) {
 
     // Listen for new messages
     newSocket.on('new-message', (message) => {
+      console.log('New message received:', message);
       // Update conversations with new message
       setConversations(prev => {
         const updated = prev.map(conv => {
@@ -74,21 +75,28 @@ function Messages({ loggedIn, userId, onClose }) {
 
     // Load conversations
     const token = localStorage.getItem('token');
+    console.log('Loading conversations...');
     fetch('http://localhost:5000/api/messages/conversations', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
-      .then(res => res.json())
+      .then(res => {
+        console.log('Response status:', res.status);
+        return res.json();
+      })
       .then(data => {
+        console.log('Conversations data:', data);
         if (Array.isArray(data)) {
           setConversations(data);
           const totalUnread = data.reduce((sum, conv) => sum + conv.unreadCount, 0);
           setUnreadCount(totalUnread);
         } else {
+          console.error('Invalid data format:', data);
           setError(data.error || 'Failed to load conversations');
         }
         setLoading(false);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('Failed to load conversations:', error);
         setError('Failed to load conversations');
         setLoading(false);
       });
@@ -99,18 +107,28 @@ function Messages({ loggedIn, userId, onClose }) {
   }, [loggedIn, userId]);
 
   const handleConversationSelect = (conversation) => {
+    console.log('Selected conversation:', conversation);
     setSelectedConversation(conversation);
     // Mark messages as read
     const token = localStorage.getItem('token');
-    fetch(`http://localhost:5000/api/messages/read/${conversation._id}`, {
+    fetch(`http://localhost:5000/api/messages/read/${conversation.swapRequestId}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(res => {
+      console.log('Mark as read response:', res.status);
+      if (!res.ok) {
+        console.error('Failed to mark messages as read');
+      }
+    })
+    .catch(error => {
+      console.error('Error marking messages as read:', error);
     });
 
     // Update unread count
     setConversations(prev => 
       prev.map(conv => 
-        conv._id === conversation._id 
+        conv.swapRequestId === conversation.swapRequestId 
           ? { ...conv, unreadCount: 0 }
           : conv
       )

@@ -40,7 +40,7 @@ function FloatingMessages({ loggedIn, userId }) {
       // Update total unread count
       setUnreadCount(prev => prev + (message.recipient._id === userId ? 1 : 0));
 
-      // Show browser notification
+      // Show browser notification (keep this as fallback)
       if (Notification.permission === 'granted' && !showMessages) {
         new Notification('New Message', {
           body: `${message.sender.username}: ${message.content}`,
@@ -262,28 +262,46 @@ function FloatingMessages({ loggedIn, userId }) {
           </div>
 
           {/* Content Area */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             {selectedConversation ? (
               // Show Chat
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                 {/* Chat Header */}
                 <div style={{
                   padding: 12,
                   borderBottom: '1px solid #333',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 12
+                  gap: 12,
+                  flexShrink: 0,
+                  background: '#23232a'
                 }}>
                   <button
                     onClick={() => setSelectedConversation(null)}
                     style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#888',
+                      background: 'rgba(58, 209, 232, 0.1)',
+                      border: '2px solid #3ad1e8',
+                      color: '#3ad1e8',
                       cursor: 'pointer',
                       fontSize: '1.2rem',
-                      padding: 4
+                      padding: '8px',
+                      borderRadius: '50%',
+                      width: '36px',
+                      height: '36px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s ease'
                     }}
+                    onMouseEnter={(e) => {
+                      e.target.style.background = 'rgba(58, 209, 232, 0.2)';
+                      e.target.style.transform = 'scale(1.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = 'rgba(58, 209, 232, 0.1)';
+                      e.target.style.transform = 'scale(1)';
+                    }}
+                    title="Back to conversations"
                   >
                     ←
                   </button>
@@ -319,17 +337,23 @@ function FloatingMessages({ loggedIn, userId }) {
                 </div>
                 
                 {/* Chat Component */}
-                <div style={{ flex: 1, overflow: 'hidden' }}>
+                <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                   <Chat
                     swapRequestId={selectedConversation._id}
                     otherUser={selectedConversation.otherUser}
                     onClose={handleCloseChat}
+                    hideHeader={true}
                   />
                 </div>
               </div>
             ) : (
               // Show Conversations List
-              <div style={{ flex: 1, overflowY: 'auto' }}>
+              <div style={{ 
+                flex: 1, 
+                overflowY: 'auto', 
+                overflowX: 'hidden',
+                minHeight: 0
+              }}>
                 {conversations.length === 0 ? (
                   <div style={{ padding: 20, textAlign: 'center', color: '#888' }}>
                     No conversations yet. Accept a swap request to start messaging!
