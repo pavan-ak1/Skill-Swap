@@ -25,28 +25,22 @@ Skill Swap Platform is a mini-application that enables users to list the skills 
 - Ratings & feedback after swaps
 
 ## Team
+
 ### Team Leader
- **Pavan A. Kustagi**  
+- **Pavan A. Kustagi** — *Backend Developer*  
   Email: kustagipavan30@gmail.com  
-  Phone: +91 83173 83195
-  Role: Backend Developer
+  Phone: +91&nbsp;83173&nbsp;83195
 
 ### Team Members
-1. **Prateek Bhat**  
--Email: prateekbhat1919@gmail.com  
--Phone: +91 80886 96168
--Role: Frontend Developer
-
-2. **Varun Bhat P**  
--Email: varunbpadoor@gmail.com  
--Phone: +91 82176 22619
-
--Role: Backend Developer
-
-3. **Yuvraj Kachroo**  
--Email: Yuvrajkachroo@gmail.com  
--Phone: +91 84910 598184
--Role: Frontend Developer
+1. **Prateek Bhat** — *Frontend Developer*  
+   Email: prateekbhat1919@gmail.com  
+   Phone: +91&nbsp;80886&nbsp;96168
+2. **Varun Bhat P** — *Backend Developer*  
+   Email: varunbpadoor@gmail.com  
+   Phone: +91&nbsp;82176&nbsp;22619
+3. **Yuvraj Kachroo** — *Frontend Developer*  
+   Email: Yuvrajkachroo@gmail.com  
+   Phone: +91&nbsp;84910&nbsp;59818
 
 ---
 For any queries, please reach out to the Team Leader at the contact details above.
