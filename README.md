@@ -40,6 +40,7 @@ Skill Swap Platform is a mini-application that enables users to list the skills 
 2. **Varun Bhat P**  
 -Email: varunbpadoor@gmail.com  
 -Phone: +91 82176 22619
+
 -Role: Backend Developer
 
 3. **Yuvraj Kachroo**  
