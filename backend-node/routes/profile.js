@@ -7,8 +7,7 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'devsecret';
-
+const JWT_SECRET = process.env.JWT_SECRET;
 // Cloudinary config
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,

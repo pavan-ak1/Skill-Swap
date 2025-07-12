@@ -5,7 +5,7 @@ const Profile = require('../models/Profile');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'devsecret';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Signup
 router.post('/register', async (req, res) => {

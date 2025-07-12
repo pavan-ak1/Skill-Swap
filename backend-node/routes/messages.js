@@ -6,7 +6,7 @@ const SwapRequest = require('../models/SwapRequest');
 const User = require('../models/User');
 const Profile = require('../models/Profile');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'devsecret';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Middleware to check JWT and set req.userId
 function auth(req, res, next) {
