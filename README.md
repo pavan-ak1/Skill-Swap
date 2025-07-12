@@ -39,8 +39,7 @@ Skill Swap Platform is a mini-application that enables users to list the skills 
    Phone: +91 82176 22619
 3. **Yuvraj Kachroo**  
    Email: Yuvrajkachroo@gmail.com  
-   Phone: +91 84910 59818
-4. *(Member details to be updated)*
+   Phone: +91 84910 598184
 
 ---
 For any queries, please reach out to the Team Leader at the contact details above.
