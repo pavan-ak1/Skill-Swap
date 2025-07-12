@@ -19,6 +19,7 @@ function Messages({ loggedIn, userId, onClose }) {
 
     // Listen for new messages
     newSocket.on('new-message', (message) => {
+      console.log('New message received:', message);
       // Update conversations with new message
       setConversations(prev => {
         const updated = prev.map(conv => {
@@ -44,21 +45,28 @@ function Messages({ loggedIn, userId, onClose }) {
 
     // Load conversations
     const token = localStorage.getItem('token');
+    console.log('Loading conversations...');
     fetch('http://localhost:5000/api/messages/conversations', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
-      .then(res => res.json())
+      .then(res => {
+        console.log('Response status:', res.status);
+        return res.json();
+      })
       .then(data => {
+        console.log('Conversations data:', data);
         if (Array.isArray(data)) {
           setConversations(data);
           const totalUnread = data.reduce((sum, conv) => sum + conv.unreadCount, 0);
           setUnreadCount(totalUnread);
         } else {
+          console.error('Invalid data format:', data);
           setError(data.error || 'Failed to load conversations');
         }
         setLoading(false);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('Failed to load conversations:', error);
         setError('Failed to load conversations');
         setLoading(false);
       });
@@ -69,18 +77,28 @@ function Messages({ loggedIn, userId, onClose }) {
   }, [loggedIn, userId]);
 
   const handleConversationSelect = (conversation) => {
+    console.log('Selected conversation:', conversation);
     setSelectedConversation(conversation);
     // Mark messages as read
     const token = localStorage.getItem('token');
-    fetch(`http://localhost:5000/api/messages/read/${conversation._id}`, {
+    fetch(`http://localhost:5000/api/messages/read/${conversation.swapRequestId}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(res => {
+      console.log('Mark as read response:', res.status);
+      if (!res.ok) {
+        console.error('Failed to mark messages as read');
+      }
+    })
+    .catch(error => {
+      console.error('Error marking messages as read:', error);
     });
 
     // Update unread count
     setConversations(prev => 
       prev.map(conv => 
-        conv._id === conversation._id 
+        conv.swapRequestId === conversation.swapRequestId 
           ? { ...conv, unreadCount: 0 }
           : conv
       )
@@ -112,147 +130,150 @@ function Messages({ loggedIn, userId, onClose }) {
         display: 'flex',
         overflow: 'hidden'
       }}>
-        {/* Conversations Sidebar */}
-        <div style={{
-          width: 300,
-          borderRight: '1px solid #333',
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
+        {/* Conversations Sidebar - hide when chat is open */}
+        {!selectedConversation && (
           <div style={{
-            padding: 16,
-            borderBottom: '1px solid #333',
+            width: 300,
+            borderRight: '1px solid #333',
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
+            flexDirection: 'column'
           }}>
-            <h3 style={{ color: '#fff', margin: 0 }}>Messages</h3>
-            <button
-              onClick={onClose}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#888',
-                cursor: 'pointer',
-                fontSize: '1.2rem'
-              }}
-            >
-              ×
-            </button>
-          </div>
+            <div style={{
+              padding: 16,
+              borderBottom: '1px solid #333',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <h3 style={{ color: '#fff', margin: 0 }}>Messages</h3>
+              <button
+                onClick={onClose}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#888',
+                  cursor: 'pointer',
+                  fontSize: '1.2rem'
+                }}
+              >
+                ×
+              </button>
+            </div>
 
-          {loading ? (
-            <div style={{ padding: 20, textAlign: 'center', color: '#888' }}>
-              Loading conversations...
-            </div>
-          ) : error ? (
-            <div style={{ padding: 20, textAlign: 'center', color: 'red' }}>
-              {error}
-            </div>
-          ) : conversations.length === 0 ? (
-            <div style={{ padding: 20, textAlign: 'center', color: '#888' }}>
-              No conversations yet. Accept a swap request to start messaging!
-            </div>
-          ) : (
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-              {conversations.map((conversation) => (
-                <div
-                  key={conversation._id}
-                  onClick={() => handleConversationSelect(conversation)}
-                  style={{
-                    padding: 12,
-                    borderBottom: '1px solid #333',
-                    cursor: 'pointer',
-                    background: selectedConversation?._id === conversation._id ? '#23232a' : 'transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12
-                  }}
-                >
-                  <div style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: '50%',
-                    background: '#23232a',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '2px solid #3ad1e8',
-                    overflow: 'hidden',
-                    position: 'relative'
-                  }}>
-                    {conversation.otherUser.profile?.photo ? (
-                      <img
-                        src={conversation.otherUser.profile.photo}
-                        alt="Profile"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <span role="img" aria-label="profile" style={{ fontSize: '1.2rem' }}>👤</span>
-                    )}
-                    {conversation.unreadCount > 0 && (
-                      <div style={{
-                        position: 'absolute',
-                        top: -2,
-                        right: -2,
-                        background: '#ff6b6b',
-                        color: '#fff',
-                        borderRadius: '50%',
-                        width: 18,
-                        height: 18,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.7rem',
-                        fontWeight: 'bold'
-                      }}>
-                        {conversation.unreadCount}
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
+            {loading ? (
+              <div style={{ padding: 20, textAlign: 'center', color: '#888' }}>
+                Loading conversations...
+              </div>
+            ) : error ? (
+              <div style={{ padding: 20, textAlign: 'center', color: 'red' }}>
+                {error}
+              </div>
+            ) : conversations.length === 0 ? (
+              <div style={{ padding: 20, textAlign: 'center', color: '#888' }}>
+                No conversations yet. Accept a swap request to start messaging!
+              </div>
+            ) : (
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                {conversations.map((conversation) => (
+                  <div
+                    key={conversation.swapRequestId}
+                    onClick={() => handleConversationSelect(conversation)}
+                    style={{
+                      padding: 12,
+                      borderBottom: '1px solid #333',
+                      cursor: 'pointer',
+                      background: selectedConversation?.swapRequestId === conversation.swapRequestId ? '#23232a' : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12
+                    }}
+                  >
                     <div style={{
-                      color: '#fff',
-                      fontWeight: 600,
-                      fontSize: '0.9rem',
-                      whiteSpace: 'nowrap',
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
+                      background: '#23232a',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '2px solid #3ad1e8',
                       overflow: 'hidden',
-                      textOverflow: 'ellipsis'
+                      position: 'relative'
                     }}>
-                      {conversation.otherUser.profile?.name || conversation.otherUser.username}
-                    </div>
-                    <div style={{
-                      color: '#888',
-                      fontSize: '0.8rem',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}>
-                      {conversation.lastMessage ? (
-                        <>
-                          <span style={{ color: conversation.lastMessage.sender === conversation.otherUser.username ? '#3ad1e8' : '#888' }}>
-                            {conversation.lastMessage.sender === conversation.otherUser.username ? '' : 'You: '}
-                          </span>
-                          {conversation.lastMessage.content}
-                        </>
+                      {conversation.otherUser.profile?.photo ? (
+                        <img
+                          src={conversation.otherUser.profile.photo}
+                          alt="Profile"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
                       ) : (
-                        'No messages yet'
+                        <span role="img" aria-label="profile" style={{ fontSize: '1.2rem' }}>👤</span>
+                      )}
+                      {conversation.unreadCount > 0 && (
+                        <div style={{
+                          position: 'absolute',
+                          top: -2,
+                          right: -2,
+                          background: '#ff6b6b',
+                          color: '#fff',
+                          borderRadius: '50%',
+                          width: 18,
+                          height: 18,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.7rem',
+                          fontWeight: 'bold'
+                        }}>
+                          {conversation.unreadCount}
+                        </div>
                       )}
                     </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        color: '#fff',
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
+                        {conversation.otherUser.profile?.name || conversation.otherUser.username}
+                      </div>
+                      <div style={{
+                        color: '#888',
+                        fontSize: '0.8rem',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
+                        {conversation.lastMessage ? (
+                          <>
+                            <span style={{ color: conversation.lastMessage.sender === conversation.otherUser.username ? '#3ad1e8' : '#888' }}>
+                              {conversation.lastMessage.sender === conversation.otherUser.username ? '' : 'You: '}
+                            </span>
+                            {conversation.lastMessage.content}
+                          </>
+                        ) : (
+                          'No messages yet'
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Chat Area */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           {selectedConversation ? (
             <Chat
-              swapRequestId={selectedConversation._id}
+              swapRequestId={selectedConversation.swapRequestId}
               otherUser={selectedConversation.otherUser}
               onClose={() => setSelectedConversation(null)}
+              hideHeader={true}
             />
           ) : (
             <div style={{

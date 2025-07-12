@@ -31,10 +31,25 @@ function Inbox({ loggedIn, userId }) {
     return () => socket.disconnect();
   }, [loggedIn, userId]);
 
-
-
   if (!loggedIn) return <div className="main-content">Please log in to view your inbox.</div>;
 
+  // If a chat is open, show only the Chat component (not the list)
+  if (chatUser && selectedSwapRequest) {
+    return (
+      <div className="main-content" style={{ maxWidth: 600, margin: '40px auto', borderRadius: 24, background: '#23232a', padding: 0 }}>
+        <Chat
+          swapRequestId={selectedSwapRequest._id}
+          otherUser={chatUser}
+          onClose={() => {
+            setChatUser(null);
+            setSelectedSwapRequest(null);
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Otherwise, show the conversation list
   return (
     <div className="main-content" style={{ maxWidth: 600, margin: '40px auto', borderRadius: 24, background: '#23232a', padding: 32 }}>
       <h2 style={{ color: '#fff', marginBottom: 24 }}>Inbox</h2>
@@ -42,7 +57,7 @@ function Inbox({ loggedIn, userId }) {
       {requests.length === 0 ? (
         <div style={{ color: '#888' }}>No swap requests yet.</div>
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0 }}>
+        <ul style={{ listStyle: 'none', padding: 0, maxHeight: 500, overflowY: 'auto' }}>
           {requests.map((req, idx) => (
             <li key={req._id || idx} style={{ background: '#18181b', borderRadius: 12, marginBottom: 18, padding: 18 }}>
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
@@ -96,7 +111,7 @@ function Inbox({ loggedIn, userId }) {
               <div style={{ color: '#888', fontSize: '0.9rem', marginBottom: 12 }}>
                 {new Date(req.date).toLocaleString()}
               </div>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
                   <button className="primary-btn" onClick={() => {
                     setChatUser(req.fromUser);
@@ -118,16 +133,6 @@ function Inbox({ loggedIn, userId }) {
             </li>
           ))}
         </ul>
-      )}
-      {chatUser && selectedSwapRequest && (
-        <Chat
-          swapRequestId={selectedSwapRequest._id}
-          otherUser={chatUser}
-          onClose={() => {
-            setChatUser(null);
-            setSelectedSwapRequest(null);
-          }}
-        />
       )}
     </div>
   );

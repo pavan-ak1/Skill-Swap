@@ -14,6 +14,7 @@ import Inbox from './components/Inbox';
 import Chat from './components/Chat';
 import Messages from './components/Messages';
 import FloatingMessages from './components/FloatingMessages';
+import NotificationToast from './components/NotificationToast';
 import { io } from 'socket.io-client';
 
 function getUserIdFromToken() {
@@ -30,6 +31,8 @@ function getUserIdFromToken() {
 function Home({ loggedIn, setLoggedIn, userId }) {
   const navigate = useNavigate();
   const [profiles, setProfiles] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
   useEffect(() => {
     fetch('http://localhost:5000/api/profile/all')
       .then(res => res.json())
@@ -37,6 +40,11 @@ function Home({ loggedIn, setLoggedIn, userId }) {
       .catch(() => setProfiles([]));
   }, []);
   const filteredProfiles = userId ? profiles.filter(p => p.user && p.user._id !== userId) : profiles;
+  const totalPages = Math.ceil(filteredProfiles.length / pageSize) || 1;
+  const pagedProfiles = filteredProfiles.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
   return (
     <div className="app-container">
       <Header
@@ -47,8 +55,8 @@ function Home({ loggedIn, setLoggedIn, userId }) {
         onInbox={() => navigate('/inbox')}
       />
       <SearchBar />
-      <ProfileList profiles={filteredProfiles} loggedIn={loggedIn} userId={userId} navigate={navigate} />
-      <Pagination current={1} total={1} />
+      <ProfileList profiles={pagedProfiles} loggedIn={loggedIn} userId={userId} navigate={navigate} />
+      <Pagination current={currentPage} total={totalPages} onPageChange={handlePageChange} />
     </div>
   );
 }
@@ -56,6 +64,7 @@ function Home({ loggedIn, setLoggedIn, userId }) {
 function App() {
   const [loggedIn, setLoggedIn] = useState(!!localStorage.getItem('token'));
   const userId = getUserIdFromToken();
+  const [notifications, setNotifications] = useState([]);
 
   // Request notification permission on app load
   useEffect(() => {
@@ -64,6 +73,21 @@ function App() {
     }
   }, []);
 
+  const addNotification = (title, message, type = 'info') => {
+    const id = Date.now() + Math.random();
+    const notification = { id, title, message, type };
+    setNotifications(prev => [...prev, notification]);
+    
+    // Auto-remove notification after 5 seconds
+    setTimeout(() => {
+      removeNotification(id);
+    }, 5000);
+  };
+
+  const removeNotification = (id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
   useEffect(() => {
     if (!userId) return;
     const socket = io('http://localhost:5000', { transports: ['websocket'] });
@@ -71,11 +95,20 @@ function App() {
       socket.emit('join', userId);
     });
     socket.on('swap-request', (data) => {
-      alert('New swap request received!');
-      // You can replace this with a custom notification UI
+      addNotification(
+        'New Swap Request!', 
+        `You have received a new swap request from ${data.sender?.username || 'someone'}`, 
+        'success'
+      );
     });
     socket.on('new-message', (message) => {
-      // Show browser notification if permission is granted
+      addNotification(
+        'New Message', 
+        `${message.sender.username}: ${message.content}`, 
+        'info'
+      );
+      
+      // Also show browser notification if permission is granted
       if (Notification.permission === 'granted') {
         new Notification('New Message', {
           body: `${message.sender.username}: ${message.content}`,
@@ -104,7 +137,11 @@ function App() {
         <Route path="/inbox" element={<Inbox loggedIn={loggedIn} userId={userId} />} />
       </Routes>
       
-            <FloatingMessages loggedIn={loggedIn} userId={userId} />
+      <FloatingMessages loggedIn={loggedIn} userId={userId} />
+      <NotificationToast 
+        notifications={notifications} 
+        onRemove={removeNotification} 
+      />
     </>
   );
 }
