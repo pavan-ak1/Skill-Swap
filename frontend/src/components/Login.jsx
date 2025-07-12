@@ -259,13 +259,14 @@ function Login({ setLoggedIn }) {
            </h2>
 
           <div className="form-section">
-            <label style={labelStyles}>Username</label>
+            <label style={labelStyles}>Email</label>
             <input 
-              value={username} 
-              onChange={e => setUsername(e.target.value)} 
+              type="email"
+              value={email} 
+              onChange={e => setEmail(e.target.value)} 
               required 
               style={inputStyles}
-              placeholder="Enter your username"
+              placeholder="Enter your email"
             />
           </div>
 
@@ -280,15 +281,13 @@ function Login({ setLoggedIn }) {
               placeholder="Enter your password"
             />
           </div>
-
-          {error && (
-            <div className="error-message">
-              {error}
-            </div>
-          )}
-
-          <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-            <a href="#" style={linkStyles}>Forgot username/password?</a>
+          {error && <div style={{ color: 'red', marginBottom: 16, textAlign: 'center' }}>{error}</div>}
+          <div style={{ textAlign: 'center', marginBottom: 10 }}>
+            <a href="#" style={{ color: '#3ad1e8', textDecoration: 'none', fontSize: '1rem' }}>Forgot email/password</a>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <span style={{ color: '#fff', fontSize: '1rem' }}>Don't have an account? </span>
+            <Link to="/signup" style={{ color: '#3ad1e8', fontSize: '1rem' }}>Sign up</Link>
           </div>
 
           <button 
