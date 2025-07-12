@@ -9,6 +9,36 @@ function Messages({ loggedIn, userId, onClose }) {
   const [error, setError] = useState('');
   const [socket, setSocket] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Color palette based on color theory for dark theme
+  const colors = {
+    primary: '#6366f1', // Indigo - primary brand color
+    primaryHover: '#4f46e5', // Darker indigo for hover states
+    secondary: '#10b981', // Emerald - secondary accent
+    background: '#0f172a', // Slate 900 - main background
+    surface: '#1e293b', // Slate 800 - surface elements
+    surfaceHover: '#334155', // Slate 700 - hover states
+    border: '#475569', // Slate 600 - borders
+    text: '#f8fafc', // Slate 50 - primary text
+    textSecondary: '#cbd5e1', // Slate 300 - secondary text
+    danger: '#ef4444', // Red 500 - danger/error states
+    dangerHover: '#dc2626', // Red 600 - danger hover
+    success: '#22c55e', // Green 500 - success states
+    warning: '#f59e0b' // Amber 500 - warning states
+  };
+
+  // Responsive breakpoint detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     if (!loggedIn) return;
@@ -88,186 +118,293 @@ function Messages({ loggedIn, userId, onClose }) {
     setUnreadCount(prev => prev - conversation.unreadCount);
   };
 
+  const overlayStyles = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0, 0, 0, 0.8)',
+    backdropFilter: 'blur(4px)',
+    zIndex: 1000,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: isMobile ? '16px' : '24px'
+  };
+
+  const containerStyles = {
+    background: colors.surface,
+    borderRadius: '20px',
+    width: '100%',
+    maxWidth: isMobile ? '100%' : '1000px',
+    height: isMobile ? '100%' : '80%',
+    display: 'flex',
+    overflow: 'hidden',
+    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)',
+    border: `1px solid ${colors.border}`
+  };
+
+  const sidebarStyles = {
+    width: isMobile ? '100%' : '320px',
+    borderRight: `1px solid ${colors.border}`,
+    display: 'flex',
+    flexDirection: 'column',
+    background: colors.background
+  };
+
+  const headerStyles = {
+    padding: isMobile ? '16px' : '20px',
+    borderBottom: `1px solid ${colors.border}`,
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    background: colors.surface
+  };
+
+  const closeButtonStyles = {
+    background: 'none',
+    border: 'none',
+    color: colors.textSecondary,
+    cursor: 'pointer',
+    fontSize: '1.5rem',
+    padding: '4px',
+    borderRadius: '6px',
+    transition: 'all 0.2s ease',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '32px',
+    height: '32px'
+  };
+
+  const conversationItemStyles = (isSelected) => ({
+    padding: '16px',
+    borderBottom: `1px solid ${colors.border}`,
+    cursor: 'pointer',
+    background: isSelected ? colors.surfaceHover : 'transparent',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    transition: 'all 0.2s ease',
+    position: 'relative'
+  });
+
+  const photoContainerStyles = {
+    width: '48px',
+    height: '48px',
+    borderRadius: '50%',
+    background: colors.surface,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: `2px solid ${colors.primary}`,
+    overflow: 'hidden',
+    position: 'relative',
+    flexShrink: 0
+  };
+
+  const unreadBadgeStyles = {
+    position: 'absolute',
+    top: '-4px',
+    right: '-4px',
+    background: colors.danger,
+    color: colors.text,
+    borderRadius: '50%',
+    width: '20px',
+    height: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '0.75rem',
+    fontWeight: '600',
+    boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)'
+  };
+
+  const chatAreaStyles = {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    background: colors.surface
+  };
+
+  const emptyStateStyles = {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: colors.textSecondary,
+    fontSize: '1rem',
+    textAlign: 'center',
+    padding: '40px'
+  };
+
   if (!loggedIn) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0, 0, 0, 0.8)',
-      zIndex: 1000,
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center'
-    }}>
-      <div style={{
-        background: '#18181b',
-        borderRadius: 12,
-        width: '90%',
-        maxWidth: 800,
-        height: '80%',
-        display: 'flex',
-        overflow: 'hidden'
-      }}>
-        {/* Conversations Sidebar */}
-        <div style={{
-          width: 300,
-          borderRight: '1px solid #333',
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
-          <div style={{
-            padding: 16,
-            borderBottom: '1px solid #333',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <h3 style={{ color: '#fff', margin: 0 }}>Messages</h3>
-            <button
-              onClick={onClose}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#888',
-                cursor: 'pointer',
-                fontSize: '1.2rem'
-              }}
-            >
-              ×
-            </button>
-          </div>
+    <>
+      <style>
+        {`
+          .conversation-item:hover {
+            background: ${colors.surfaceHover} !important;
+          }
+          
+          .close-button:hover {
+            background: ${colors.surfaceHover} !important;
+            color: ${colors.text} !important;
+          }
+        `}
+      </style>
 
-          {loading ? (
-            <div style={{ padding: 20, textAlign: 'center', color: '#888' }}>
-              Loading conversations...
+      <div style={overlayStyles} onClick={onClose}>
+        <div style={containerStyles} onClick={(e) => e.stopPropagation()}>
+          {/* Conversations Sidebar */}
+          <div style={sidebarStyles}>
+            <div style={headerStyles}>
+              <h3 style={{ 
+                color: colors.text, 
+                margin: 0, 
+                fontSize: '1.2rem',
+                fontWeight: '600',
+                background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}>
+                Messages
+              </h3>
+              <button
+                onClick={onClose}
+                style={closeButtonStyles}
+                className="close-button"
+              >
+                ×
+              </button>
             </div>
-          ) : error ? (
-            <div style={{ padding: 20, textAlign: 'center', color: 'red' }}>
-              {error}
-            </div>
-          ) : conversations.length === 0 ? (
-            <div style={{ padding: 20, textAlign: 'center', color: '#888' }}>
-              No conversations yet. Accept a swap request to start messaging!
-            </div>
-          ) : (
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-              {conversations.map((conversation) => (
-                <div
-                  key={conversation._id}
-                  onClick={() => handleConversationSelect(conversation)}
-                  style={{
-                    padding: 12,
-                    borderBottom: '1px solid #333',
-                    cursor: 'pointer',
-                    background: selectedConversation?._id === conversation._id ? '#23232a' : 'transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12
-                  }}
-                >
-                  <div style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: '50%',
-                    background: '#23232a',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '2px solid #3ad1e8',
-                    overflow: 'hidden',
-                    position: 'relative'
-                  }}>
-                    {conversation.otherUser.profile?.photo ? (
-                      <img
-                        src={conversation.otherUser.profile.photo}
-                        alt="Profile"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <span role="img" aria-label="profile" style={{ fontSize: '1.2rem' }}>👤</span>
-                    )}
-                    {conversation.unreadCount > 0 && (
-                      <div style={{
-                        position: 'absolute',
-                        top: -2,
-                        right: -2,
-                        background: '#ff6b6b',
-                        color: '#fff',
-                        borderRadius: '50%',
-                        width: 18,
-                        height: 18,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.7rem',
-                        fontWeight: 'bold'
-                      }}>
-                        {conversation.unreadCount}
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      color: '#fff',
-                      fontWeight: 600,
-                      fontSize: '0.9rem',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}>
-                      {conversation.otherUser.profile?.name || conversation.otherUser.username}
-                    </div>
-                    <div style={{
-                      color: '#888',
-                      fontSize: '0.8rem',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}>
-                      {conversation.lastMessage ? (
-                        <>
-                          <span style={{ color: conversation.lastMessage.sender === conversation.otherUser.username ? '#3ad1e8' : '#888' }}>
-                            {conversation.lastMessage.sender === conversation.otherUser.username ? '' : 'You: '}
-                          </span>
-                          {conversation.lastMessage.content}
-                        </>
+
+            {loading ? (
+              <div style={{ 
+                padding: '40px 20px', 
+                textAlign: 'center', 
+                color: colors.textSecondary,
+                fontSize: '0.95rem'
+              }}>
+                Loading conversations...
+              </div>
+            ) : error ? (
+              <div style={{ 
+                padding: '40px 20px', 
+                textAlign: 'center', 
+                color: colors.danger,
+                fontSize: '0.95rem'
+              }}>
+                {error}
+              </div>
+            ) : conversations.length === 0 ? (
+              <div style={{ 
+                padding: '40px 20px', 
+                textAlign: 'center', 
+                color: colors.textSecondary,
+                fontSize: '0.95rem',
+                lineHeight: '1.5'
+              }}>
+                <div style={{ fontSize: '1.5rem', marginBottom: '12px', color: colors.primary, fontWeight: '600' }}>Messages</div>
+                No conversations yet.<br />
+                Accept a swap request to start messaging!
+              </div>
+            ) : (
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                {conversations.map((conversation) => (
+                  <div
+                    key={conversation._id}
+                    onClick={() => handleConversationSelect(conversation)}
+                    style={conversationItemStyles(selectedConversation?._id === conversation._id)}
+                    className="conversation-item"
+                  >
+                    <div style={photoContainerStyles}>
+                      {conversation.otherUser.profile?.photo ? (
+                        <img
+                          src={conversation.otherUser.profile.photo}
+                          alt="Profile"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
                       ) : (
-                        'No messages yet'
+                        <span style={{ 
+                          fontSize: '1.5rem',
+                          color: colors.primary,
+                          fontWeight: '600'
+                        }}>U</span>
+                      )}
+                      {conversation.unreadCount > 0 && (
+                        <div style={unreadBadgeStyles}>
+                          {conversation.unreadCount > 9 ? '9+' : conversation.unreadCount}
+                        </div>
                       )}
                     </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        color: colors.text,
+                        fontWeight: '600',
+                        fontSize: '0.95rem',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        marginBottom: '4px'
+                      }}>
+                        {conversation.otherUser.profile?.name || conversation.otherUser.username}
+                      </div>
+                      <div style={{
+                        color: colors.textSecondary,
+                        fontSize: '0.85rem',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        lineHeight: '1.3'
+                      }}>
+                        {conversation.lastMessage ? (
+                          <>
+                            <span style={{ 
+                              color: conversation.lastMessage.sender === conversation.otherUser.username 
+                                ? colors.primary 
+                                : colors.textSecondary 
+                            }}>
+                              {conversation.lastMessage.sender === conversation.otherUser.username ? '' : 'You: '}
+                            </span>
+                            {conversation.lastMessage.content}
+                          </>
+                        ) : (
+                          'No messages yet'
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
 
-        {/* Chat Area */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          {selectedConversation ? (
-            <Chat
-              swapRequestId={selectedConversation._id}
-              otherUser={selectedConversation.otherUser}
-              onClose={() => setSelectedConversation(null)}
-            />
-          ) : (
-            <div style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#888'
-            }}>
-              Select a conversation to start messaging
-            </div>
-          )}
+          {/* Chat Area */}
+          <div style={chatAreaStyles}>
+            {selectedConversation ? (
+              <Chat
+                swapRequestId={selectedConversation._id}
+                otherUser={selectedConversation.otherUser}
+                onClose={() => setSelectedConversation(null)}
+              />
+            ) : (
+              <div style={emptyStateStyles}>
+                                 <div>
+                   <div style={{ fontSize: '1.5rem', marginBottom: '16px', color: colors.primary, fontWeight: '600' }}>Select Conversation</div>
+                   <div style={{ fontSize: '1.1rem', marginBottom: '8px' }}>
+                     Choose a conversation to start messaging
+                   </div>
+                 </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

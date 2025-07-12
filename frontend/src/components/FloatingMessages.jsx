@@ -168,7 +168,7 @@ function FloatingMessages({ loggedIn, userId }) {
             e.target.style.boxShadow = '0 4px 12px rgba(58, 209, 232, 0.3)';
           }}
         >
-          <span role="img" aria-label="messages" style={{ fontSize: '1.5rem' }}>💬</span>
+                          <span style={{ fontSize: '1.5rem', fontWeight: '600' }}>M</span>
           
           {/* Notification Badge */}
           {unreadCount > 0 && (
@@ -305,7 +305,7 @@ function FloatingMessages({ loggedIn, userId }) {
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     ) : (
-                      <span role="img" aria-label="profile" style={{ fontSize: '1rem' }}>👤</span>
+                      <span style={{ fontSize: '1rem', fontWeight: '600' }}>U</span>
                     )}
                   </div>
                   <div>
@@ -370,7 +370,7 @@ function FloatingMessages({ loggedIn, userId }) {
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           />
                         ) : (
-                          <span role="img" aria-label="profile" style={{ fontSize: '1.2rem' }}>👤</span>
+                          <span style={{ fontSize: '1.2rem', fontWeight: '600' }}>U</span>
                         )}
                         {conversation.unreadCount > 0 && (
                           <div style={{
